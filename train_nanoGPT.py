@@ -9,7 +9,7 @@ batch_size = 64 # how many independent sequences will we process in parallel?
 block_size = 256 # what is the maximum context length for predictions?
 max_iters = 5000
 eval_interval = 500
-learning_rate = 1e-4
+learning_rate = 3e-4
 # device = 'cuda' if torch.cuda.is_available() else 'cpu' # Nvidia CUDA
 device = torch.device('mps') if torch.backends.mps.is_available() and torch.backends.mps.is_built() else 'cpu' # Apple Silicon
 eval_iters = 200
@@ -24,7 +24,6 @@ with open('data/tinyshakespeare.txt', 'r', encoding='utf-8') as f:
 # Build the vocabulary of unique characters and mapping to/from integers
 chars = sorted(list(set(text)))
 vocab_size = len(chars)
-
 # Create a mapping from characters to integers
 stoi = { ch:i for i,ch in enumerate(chars) }
 itos = { i:ch for i,ch in enumerate(chars) }
@@ -46,7 +45,7 @@ def get_batch(split):
     x, y = x.to(device), y.to(device)
     return x, y
 
-@torch.no_grad() # Don't run backprop on this function
+@torch.no_grad() # Disable backprop on this function
 def estimate_loss():
     out = {}
     model.eval()
@@ -99,7 +98,7 @@ class BigramLanguageModel(nn.Module):
         return idx
 
 class Head(nn.Module):
-    """ Single head of self-attention """
+    """ one head of self-attention """
 
     def __init__(self, head_size):
         super().__init__()
@@ -115,7 +114,7 @@ class Head(nn.Module):
         k = self.key(x)   # (B,T,C)
         q = self.query(x) # (B,T,C)
         # compute attention scores ("affinities")
-        wei = q @ k.transpose(-2,-1) * C**-0.5 # (B, T, C) @ (B, C, T) -> (B, T, T)
+        wei = q @ k.transpose(-2,-1) * k.shape[-1]**-0.5 # (B, T, C) @ (B, C, T) -> (B, T, T)
         wei = wei.masked_fill(self.tril[:T, :T] == 0, float('-inf')) # (B, T, T)
         wei = F.softmax(wei, dim=-1) # (B, T, T)
         wei = self.dropout(wei)
@@ -125,7 +124,7 @@ class Head(nn.Module):
         return out
 
 class MultiHeadAttention(nn.Module):
-    """ Multiple heads of self-attention in parallel """
+    """ multiple heads of self-attention in parallel """
 
     def __init__(self, num_heads, head_size):
         super().__init__()
@@ -139,7 +138,7 @@ class MultiHeadAttention(nn.Module):
         return out
 
 class FeedFoward(nn.Module):
-    """ A simple linear layer followed by a non-linearity """
+    """ a simple linear layer followed by a non-linearity """
 
     def __init__(self, n_embd):
         super().__init__()
@@ -147,7 +146,7 @@ class FeedFoward(nn.Module):
             nn.Linear(n_embd, 4 * n_embd),
             nn.ReLU(),
             nn.Linear(4 * n_embd, n_embd),
-            nn.Dropout(dropout)
+            nn.Dropout(dropout),
         )
 
     def forward(self, x):
@@ -170,24 +169,6 @@ class Block(nn.Module):
         x = x + self.sa(self.ln1(x))
         x = x + self.ffwd(self.ln2(x))
         return x
-
-class LayerNorm1d: # (Used to be BatchNorm1d, switching rows to columns)
-  
-    def __init__(self, dim, eps=1e-5, momentum=0.1):
-        self.eps = eps
-        self.gamma = torch.ones(dim)
-        self.beta = torch.zeros(dim)
-
-    def __call__(self, x):
-        # calculate the forward pass
-        xmean = x.mean(1, keepdim=True) # batch mean
-        xvar = x.var(1, keepdim=True) # batch variance
-        xhat = (x - xmean) / torch.sqrt(xvar + self.eps) # normalize to unit variance
-        self.out = self.gamma * xhat + self.beta
-        return self.out
-
-    def parameters(self):
-        return [self.gamma, self.beta]
 
 # Generative Pre-trained Transformer (GPT) - Single | Multi | FeedForward
 class GPTLanguageModel(nn.Module):
@@ -239,7 +220,7 @@ class GPTLanguageModel(nn.Module):
             idx = torch.cat((idx, idx_next), dim=1) # (B, T+1)
         return idx
 
-model = BigramLanguageModel()
+model = GPTLanguageModel()
 m = model.to(device)
 print(sum(p.numel() for p in m.parameters())/1e6, 'M parameters')
 
