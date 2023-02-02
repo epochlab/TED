@@ -27,6 +27,7 @@ with open('data/tinyshakespeare.txt', 'r', encoding='utf-8') as f:
 # Build the vocabulary of unique characters and mapping to/from integers
 chars = sorted(list(set(text)))
 vocab_size = len(chars)
+
 # Create a mapping from characters to integers
 stoi = { ch:i for i,ch in enumerate(chars) }
 itos = { i:ch for i,ch in enumerate(chars) }
@@ -243,7 +244,10 @@ for iter in range(max_iters):
 
     # Evaluate the loss
     logits, loss = model(xb, yb)
-    optimizer.zero_grad(set_to_none=True)
+
+    # optimizer.zero_grad(set_to_none=True)
+    optimizer.zero_grad()
+
     loss.backward()
     optimizer.step()
 
