@@ -21,7 +21,7 @@ n_head = 6
 n_layer = 6
 dropout = 0.2
 
-with open('data/tinyshakespeare.txt', 'r', encoding='utf-8') as f:
+with open('data/manifesto.txt', 'r', encoding='utf-8') as f:
     text = f.read()
 
 # Build the vocabulary of unique characters and mapping to/from integers
@@ -74,7 +74,7 @@ class BigramLanguageModel(nn.Module):
     def forward(self, idx, targets=None):
 
         # idx and targets are both (B,T) tensor of integers 
-        logits = self.token_embedding_table(idx) # B,T,C | C = nembd
+        logits = self.token_embedding_table(idx) # (B,T,C) | C = nembd
 
         if targets is None:
             loss = None
@@ -160,7 +160,7 @@ class Block(nn.Module):
     """ Transformer block: communication followed by computation """
 
     def __init__(self, n_embd, n_head):
-        # n_embd: embedding dimension, n_head: the number of heads we'd like
+        # n_embd: embedding dimension | n_head: number of heads
         super().__init__()
         head_size = n_embd // n_head
         self.sa = MultiHeadAttention(n_head, head_size)
@@ -253,4 +253,4 @@ for iter in range(max_iters):
 
 # Generate from the model
 context = torch.zeros((1, 1), dtype=torch.long, device=device)
-print(decode(m.generate(context, max_new_tokens=500)[0].tolist()))
+print(decode(m.generate(context, max_new_tokens=2000)[0].tolist()))
