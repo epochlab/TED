@@ -4,14 +4,17 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 
+print("CUDA Available: ", torch.cuda.is_available())
+
+device = torch.device("cuda" if (torch.cuda.is_available()) else "cpu")
+# device = torch.device("mps" if (torch.backends.mps.is_available()) else "cpu")
+
 # Hyperparameters
 batch_size = 64 # how many independent sequences will we process in parallel?
 block_size = 256 # what is the maximum context length for predictions?
 max_iters = 5000
 eval_interval = 500
 learning_rate = 3e-4
-# device = 'cuda' if torch.cuda.is_available() else 'cpu' # Nvidia CUDA
-device = torch.device('mps') if torch.backends.mps.is_available() and torch.backends.mps.is_built() else 'cpu' # Apple Silicon
 eval_iters = 200
 n_embd = 384
 n_head = 6
@@ -30,7 +33,7 @@ itos = { i:ch for i,ch in enumerate(chars) }
 encode = lambda s: [stoi[c] for c in s] # encoder: take a string, output a list of integers
 decode = lambda l: ''.join([itos[i] for i in l]) # decoder: take a list of integers, output a string
 
-# Train and test split - 90/10
+# Train and test split - 90:10
 data = torch.tensor(encode(text), dtype=torch.long)
 n = int(0.9*len(data))
 train_data = data[:n]
