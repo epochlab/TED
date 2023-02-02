@@ -21,7 +21,7 @@ n_head = 6
 n_layer = 6
 dropout = 0.2
 
-with open('data/manifesto.txt', 'r', encoding='utf-8') as f:
+with open('data/tinyshakespeare.txt', 'r', encoding='utf-8') as f:
     text = f.read()
 
 # Build the vocabulary of unique characters and mapping to/from integers
